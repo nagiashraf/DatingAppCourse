@@ -1,18 +1,21 @@
 using API.DTOs;
 using API.Entities;
+using CloudinaryDotNet.Actions;
 
 namespace API.Interfaces;
 
 public interface IUserRepository
 {
-    public Task UpdateAsync(MemberUpdateDto memberUpdateDto, AppUser user);
-    public Task<IEnumerable<AppUser>> GetUsersAsync();
-    public Task<AppUser> GetUserByIdAsync(int id);
-    public Task<AppUser> GetUserByUsernameAsync(string username);
-    public Task DeleteAsync(int id);
-    public Task<IEnumerable<AppUser>> SearchAsync(string username, string gender);
-
-    public Task<IEnumerable<MemberDto>> GetMembersAsync();
-    public Task<MemberDto> GetMemberByUsernameAsync(string username);
+    Task UpdateAsync(AppUser user);
+    Task<Photo> AddPhotoAsync(AppUser user, ImageUploadResult imageUploadResult);
+    Task<Photo> SetMainPhotoAsync(AppUser user, int photoId);
+    Task DeletePhotoAsync(AppUser user, Photo photo);
+    Task<IEnumerable<AppUser>> GetUsersAsync();
+    Task<AppUser> GetUserByIdAsync(int id);
+    Task<AppUser> GetUserByUsernameAsync(string username);
+    Task DeleteAsync(int id);
+    Task<IEnumerable<AppUser>> SearchAsync(string username, string gender);
+    Task<IEnumerable<MemberDto>> GetMembersAsync();
+    Task<MemberDto> GetMemberByUsernameAsync(string username);
 
 }

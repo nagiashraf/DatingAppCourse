@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Microsoft.Extensions.Options;
-using CloudinaryDotNet;
 
 namespace API.Extensions;
 
@@ -48,15 +47,11 @@ public static class ApplicationServiceExtensions
         });
 
         services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-        //TEST
-        services.Configure<CloudinarySettings>(config.GetSection(nameof(CloudinarySettings)));
-        // services.AddSingleton<CloudinaryService>();
-        // var cloudName = config.GetValue<string>("CloudinarySettings:CloudName");
-        // var apiKey = config.GetValue<string>("CloudinarySettings:ApiKey");
-        // var apiSecret = config.GetValue<string>("CloudinarySettings:ApiSecret");
 
-        // services.AddSingleton(new Cloudinary(new Account(cloudName, apiKey, apiSecret)));
-        //****
+        services.Configure<CloudinarySettings>(config.GetSection(nameof(CloudinarySettings))); 
+
+        services.AddScoped<IPhotoService, PhotoService>();
+
         return services;
     }
 }

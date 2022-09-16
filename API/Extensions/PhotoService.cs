@@ -1,17 +1,48 @@
+using API.Helpers;
 using API.Interfaces;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using Microsoft.Extensions.Options;
 
 namespace API.Extensions;
 
 public class PhotoService : IPhotoService
 {
-    public Task<ImageUploadResult> AddPhotoAsync(IFormFile file)
+    private readonly Cloudinary _cloudinary;
+    public PhotoService(IOptions<CloudinarySettings> cloudinarySettings)
     {
-        throw new NotImplementedException();
+        var account = new Account(
+            cloudinarySettings.Value.CloudName,
+            cloudinarySettings.Value.ApiKey,
+            cloudinarySettings.Value.ApiSecret
+        );
+
+        _cloudinary = new Cloudinary(account);
+    }
+    public async Task<ImageUploadResult> AddPhotoAsync(IFormFile file)
+    {
+        var uploadResult = new ImageUploadResult();
+
+        if (file.Length > 0)
+        {
+            using var stream = file.OpenReadStream();
+            var uploadParams = new ImageUploadParams()
+            {
+                File = new FileDescription(file.FileName, stream),
+                Transformation = new Transformation().Height(500).Width(500).Crop("fill").Gravity(Gravity.Face)
+            };
+            uploadResult = await _cloudinary.UploadAsync(uploadParams);
+        }
+
+        return uploadResult;
     }
 
-    public Task<DeletionResult> DeletePhotoAsync(string PublicId)
+    public async Task<DeletionResult> DeletePhotoAsync(string publicId)
     {
-        throw new NotImplementedException();
+        var deletionParams = new DeletionParams(publicId);
+
+        var result = await _cloudinary.DestroyAsync(deletionParams);
+
+        return result;
     }
 }

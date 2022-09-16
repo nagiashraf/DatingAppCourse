@@ -1,11 +1,44 @@
 <form #registerForm="ngForm" (ngSubmit)="register()" autocomplete="off">
     <h2 class="text-center text-primary">Sign up</h2>
     <hr>
+    <!-- TEST -->
+    <div class="form-group">
+        <!-- <label class="control-label" style="margin-right: 10px;">I am a: </label>
+        <label class="radio-inline">
+            <input type="radio" value="male" class="form-control" name="gender" [(ngModel)]="model.gender"> Male
+        </label>
+        <label class="radio-inline">
+            <input type="radio" value="female" class="form-control ml-3" name="gender" [(ngModel)]="model.gender"> Female
+        </label> -->
+        <label class="mr-2">I am a:</label>
+        <input class="mr-1" id="male" type="radio" value="male" name="gender" [(ngModel)]="model.gender">
+        <label class="mr-3" for="male">Male</label>
+        <input class="mr-1" id="female" type="radio" value="female" name="gender" [(ngModel)]="model.gender">
+        <label for="female">Female</label>
+    </div>
+    <!-- **** -->
     <div class="form-group">
         <input type="text" class="form-control" name="username" [(ngModel)]="model.username" placeholder="Username">
     </div>
+    <!-- TEST -->
+    <div class="form-group">
+        <input type="text" class="form-control" name="knownAs" [(ngModel)]="model.knownAs" placeholder="Known as">
+    </div>
+    <div class="form-group">
+        <input type="text" class="form-control" name="dateOfBirth" [type]='"date"' [(ngModel)]="model.dateOfBirth" placeholder="Date of birth">
+    </div>
+    <div class="form-group">
+        <input type="text" class="form-control" name="city" [(ngModel)]="model.city" placeholder="City">
+    </div>
+    <div class="form-group">
+        <input type="text" class="form-control" name="country" [(ngModel)]="model.country" placeholder="Country">
+    </div>
+    <!-- **** -->
     <div class="form-group">
         <input type="password" class="form-control" name="password" [(ngModel)]="model.password" placeholder="Password">
+    </div>
+    <div class="form-group">
+        <input type="password" class="form-control" name="confirmPassword" [(ngModel)]="model.confirmPassword" placeholder="Confirm password">
     </div>
     <div class="form-group text-center">
         <button class="btn btn-success mr-2" type="submit">Register</button>

@@ -3,6 +3,7 @@ using API.Entities;
 using API.Interfaces;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Data;
@@ -60,12 +61,54 @@ public class UserRepository : IUserRepository
 
         return await query.ToListAsync();
     }
-    public async Task UpdateAsync(MemberUpdateDto memberUpdateDto, AppUser user)
+    
+    public async Task UpdateAsync(AppUser user)
     {
-        _mapper.Map(memberUpdateDto, user);
-
         var entityEntry = _context.Users.Attach(user);
         entityEntry.State = EntityState.Modified;
+
+        await _context.SaveChangesAsync();
+    }
+    
+    public async Task<Photo> AddPhotoAsync(AppUser user, ImageUploadResult imageUploadResult)
+    {
+        var photo = new Photo {
+            PublicId = imageUploadResult.PublicId,
+            Url = imageUploadResult.SecureUrl.AbsoluteUri
+        };
+
+        if(user.Photos.Count ==0)
+        {
+            photo.IsMain = true;
+        }
+
+        user.Photos.Add(photo);
+
+        await _context.SaveChangesAsync();
+
+        return photo;
+    }
+
+    public async Task<Photo> SetMainPhotoAsync(AppUser user, int photoId)
+    {
+        var newMain = user.Photos.FirstOrDefault(ph => ph.Id == photoId);
+        if(newMain == null) return null;
+        
+        
+        var currentMain = user.Photos.FirstOrDefault(ph => ph.IsMain);
+        if(currentMain == null) return null;
+
+        currentMain.IsMain = false;
+        newMain.IsMain = true;
+
+        await _context.SaveChangesAsync();
+
+        return newMain;
+    }
+
+    public async Task DeletePhotoAsync(AppUser user, Photo photo)
+    {
+        user.Photos.Remove(photo);
 
         await _context.SaveChangesAsync();
     }
