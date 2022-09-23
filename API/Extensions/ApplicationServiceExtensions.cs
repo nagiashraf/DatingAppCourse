@@ -14,7 +14,7 @@ public static class ApplicationServiceExtensions
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration config)
     {
-        services.AddControllers();
+        services.AddControllers(options => options.Filters.Add<LogUserActivityFilter>());
 
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
@@ -51,6 +51,9 @@ public static class ApplicationServiceExtensions
         services.Configure<CloudinarySettings>(config.GetSection(nameof(CloudinarySettings))); 
 
         services.AddScoped<IPhotoService, PhotoService>();
+
+        services.AddScoped<ILikeRepository, LikeRepository>();
+        services.AddScoped<IMessageRepository, MessageRepository>();
 
         return services;
     }

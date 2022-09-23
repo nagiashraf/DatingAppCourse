@@ -5,19 +5,19 @@ namespace API.Helpers;
 public class PagedList<T> : List<T>
 {
     public int PageIndex { get; private set; }
-    public int TotalPages { get; private set; }
+    public int TotalPagesCount { get; private set; }
+    public int PageSize { get; set; }
+    public int TotalUsersCount { get; set; }
 
     public PagedList(IEnumerable<T> items, int count, int pageIndex, int pageSize)
     {
         PageIndex = pageIndex;
-        TotalPages = (int)Math.Ceiling((double)count / pageSize);
+        TotalPagesCount = (int)Math.Ceiling((double)count / pageSize);
+        PageSize = pageSize;
+        TotalUsersCount = count;
 
         this.AddRange(items);
     }
-
-    public bool HasPreviousPage => PageIndex > 1;
-
-    public bool HasNextPage => PageIndex < TotalPages;
 
     public static async Task<PagedList<T>> CreateAsync(IQueryable<T> source, int pageIndex, int pageSize)
     {

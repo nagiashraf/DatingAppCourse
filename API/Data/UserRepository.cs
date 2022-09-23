@@ -1,5 +1,6 @@
 using API.DTOs;
 using API.Entities;
+using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -35,7 +36,7 @@ public class UserRepository : IUserRepository
 
     public async Task<AppUser> GetUserByIdAsync(int id)
     {
-        var user = await _context.Users.Include(u => u.Photos).SingleOrDefaultAsync(u => u.Id == id);
+        var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == id);
         return user;
     }
 
@@ -43,23 +44,6 @@ public class UserRepository : IUserRepository
     {
         var user = await _context.Users.Include(u => u.Photos).SingleOrDefaultAsync(u => u.UserName == username);
         return user;
-    }
-
-    public async Task<IEnumerable<AppUser>> SearchAsync(string username, string gender)
-    {
-        IQueryable<AppUser> query = _context.Users;
-
-        if (!string.IsNullOrEmpty(username))
-        {
-            query = query.Where(u => u.UserName.Contains(username));
-        }
-
-        if(!string.IsNullOrEmpty(gender))
-        {
-            query = query.Where(u => u.Gender.Equals(gender));
-        }
-
-        return await query.ToListAsync();
     }
     
     public async Task UpdateAsync(AppUser user)
@@ -113,12 +97,25 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<MemberDto>> GetMembersAsync()
+    public async Task<PagedList<MemberDto>> GetMembersAsync(UserParams userParams)
     {
-        var users = await _context.Users
+        var dobMin = DateTime.Today.AddYears(-userParams.MaxAge - 1).AddDays(1);
+        var dobMax = DateTime.Today.AddYears(-userParams.MinAge);
+
+        IQueryable<MemberDto> users = _context.Users
+            .Where(u => u.UserName != userParams.CurrentUsername)
+            .Where(u => u.Gender == userParams.Gender)
+            .Where(u => u.DateOfBirth >= dobMin && u.DateOfBirth <= dobMax)
             .ProjectTo<MemberDto>(_mapper.ConfigurationProvider)
-            .ToListAsync();
-        return users;
+            .AsNoTracking();
+
+        users = userParams.OrderBy switch
+        {
+            "created" => users.OrderByDescending(u => u.Created),
+            _ => users.OrderByDescending(u => u.LastActive)
+        };
+
+        return await PagedList<MemberDto>.CreateAsync(users, userParams.PageIndex, userParams.PageSize);
     }
 
     public async Task<MemberDto> GetMemberByUsernameAsync(string username)
