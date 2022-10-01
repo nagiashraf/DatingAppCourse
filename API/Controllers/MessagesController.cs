@@ -39,7 +39,7 @@ public class MessagesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<MessageDto>> AddMessage(CreateMessageDto createMessageDto)
     {
-        var senderUsername = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var senderUsername = User.FindFirst(ClaimTypes.Name)?.Value;
 
         if (senderUsername == createMessageDto.RecipientUsername.ToLower())
             return BadRequest("You cannot send messages to yourself");
@@ -63,7 +63,7 @@ public class MessagesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteMessage(int id)
     {
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.FindFirst(ClaimTypes.Name)?.Value;
 
         var message = await _messageRepository.GetMessageAsync(id);
 
@@ -79,7 +79,7 @@ public class MessagesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MessageDto>>> GetMessagesForUser([FromQuery] MessageParams messageParams)
     {
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.FindFirst(ClaimTypes.Name)?.Value;
         messageParams.Username = username;
 
         var messages = await _messageRepository.GetMessageForUserAsync(messageParams);
@@ -92,7 +92,7 @@ public class MessagesController : ControllerBase
     [HttpGet("thread/{recipientUsername}")]
     public async Task<ActionResult<IEnumerable<MessageDto>>> GetMessageThread(string recipientUsername)
     {
-        var currentUsername = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var currentUsername = User.FindFirst(ClaimTypes.Name)?.Value;
         var user = await _userRepository.GetUserByUsernameAsync(currentUsername);
         if (user is null) return NotFound("User not found");
 

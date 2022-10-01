@@ -1,9 +1,12 @@
 using API.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Data;
 
-public class DataContext : DbContext
+public class DataContext : IdentityDbContext<AppUser, AppRole, int, IdentityUserClaim<int>, AppUserRole,
+    IdentityUserLogin<int>, IdentityRoleClaim<int>, IdentityUserToken<int>>
 {
 
     public DataContext(DbContextOptions<DataContext> options) : base(options)
@@ -12,6 +15,8 @@ public class DataContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<UserLike>()
             .HasKey(k => new { k.LikeSourceUserId, k.LikedUserId });
 
@@ -34,9 +39,22 @@ public class DataContext : DbContext
             .HasOne(message => message.Recipient)
             .WithMany(user => user.MessagesReceived)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AppUserRole>()
+            .HasKey(k => new { k.UserId, k.RoleId });
+
+        modelBuilder.Entity<AppUserRole>()
+            .HasOne(userRole => userRole.User)
+            .WithMany(user => user.UserRoles)
+            .HasForeignKey(userRole => userRole.UserId);
+
+        modelBuilder.Entity<AppUserRole>()
+            .HasOne(userRole => userRole.Role)
+            .WithMany(role => role.UserRoles)
+            .HasForeignKey(userRole => userRole.RoleId);
+
     }
 
-    public DbSet<AppUser> Users { get; set; }
     public DbSet<UserLike> Likes { get; set; }
     public DbSet<Message> Messages { get; set; }
 }

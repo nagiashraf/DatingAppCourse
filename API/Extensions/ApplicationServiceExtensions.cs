@@ -50,6 +50,8 @@ public static class ApplicationServiceExtensions
 
         services.Configure<CloudinarySettings>(config.GetSection(nameof(CloudinarySettings))); 
 
+        services.Configure<Jwt>(config.GetSection(nameof(Jwt)));
+
         services.AddScoped<IPhotoService, PhotoService>();
 
         services.AddScoped<ILikeRepository, LikeRepository>();

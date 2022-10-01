@@ -1,10 +1,12 @@
 using System.Security.Claims;
 using API.DTOs;
+using API.Entities;
 using API.Extensions;
 using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -18,17 +20,19 @@ public class UsersController : ControllerBase
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
     private readonly IPhotoService _photoService;
-    public UsersController(IUserRepository userRepository, IMapper mapper, IPhotoService photoService)
+    private readonly UserManager<AppUser> _userManager;
+    public UsersController(UserManager<AppUser> userManager, IUserRepository userRepository, IMapper mapper, IPhotoService photoService)
     {
         _photoService = photoService;
         _mapper = mapper;
         _userRepository = userRepository;
+        _userManager = userManager;
     }
     
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers([FromQuery] UserParams userParams)
     {
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.FindFirst(ClaimTypes.Name)?.Value;
         var user = await _userRepository.GetUserByUsernameAsync(username);
 
         userParams.CurrentUsername = username;
@@ -58,7 +62,7 @@ public class UsersController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> UpdateUser(MemberUpdateDto memberUpdateDto)
     {
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.FindFirst(ClaimTypes.Name)?.Value;
         var user = await _userRepository.GetUserByUsernameAsync(username);
 
         if(user == null) return NotFound("User not found");
@@ -68,12 +72,25 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete()]
+    public async Task<IActionResult> DeleteUser()
+    {
+        var username = User.FindFirst(ClaimTypes.Name)?.Value;
+        var user = await _userManager.FindByNameAsync(username);
+
+        if(user == null) return NotFound("User not found");
+
+        await _userManager.DeleteAsync(user);
+
+        return Ok();
+    }
+
     [HttpPost("add-photo")]
     public async Task<ActionResult<PhotoDto>> AddPhoto(IFormFile file)
     {
         if(file == null) return BadRequest("No photo uploaded");
 
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.FindFirst(ClaimTypes.Name)?.Value;
         var user = await _userRepository.GetUserByUsernameAsync(username);
 
         if(user == null) return NotFound("User not found");
@@ -92,7 +109,7 @@ public class UsersController : ControllerBase
     [HttpPut("set-main-photo/{photoId}")]
     public async Task<IActionResult> SetMainPhoto(int photoId)
     {
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.FindFirst(ClaimTypes.Name)?.Value;
         var user = await _userRepository.GetUserByUsernameAsync(username);
         if(user == null) return NotFound("User not found");
 
@@ -108,7 +125,7 @@ public class UsersController : ControllerBase
     [HttpDelete("delete-photo/{photoId}")]
     public async Task<IActionResult> DeletePhoto(int photoId)
     {
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.FindFirst(ClaimTypes.Name)?.Value;
         var user = await _userRepository.GetUserByUsernameAsync(username);
         if(user == null) return NotFound("User not found");
 

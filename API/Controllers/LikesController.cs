@@ -25,7 +25,7 @@ public class LikesController : ControllerBase
     [HttpPost("{username}")]
     public async Task<IActionResult> AddLike(string username)
     {
-        var likeSourceUserUsername = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var likeSourceUserUsername = User.FindFirst(ClaimTypes.Name)?.Value;
         var likeSourceUser = await _userRepository.GetUserByUsernameAsync(likeSourceUserUsername);
 
         var likedUser = await _userRepository.GetUserByUsernameAsync(username);
@@ -45,7 +45,7 @@ public class LikesController : ControllerBase
     [HttpDelete("{username}")]
     public async Task<IActionResult> DeleteLike(string username)
     {
-        var likeSourceUserUsername = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var likeSourceUserUsername = User.FindFirst(ClaimTypes.Name)?.Value;
         var likeSourceUser = await _userRepository.GetUserByUsernameAsync(likeSourceUserUsername);
 
         var likedUser = await _userRepository.GetUserByUsernameAsync(username);
@@ -60,7 +60,7 @@ public class LikesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<LikeDto>>> GetUserLikes([FromQuery] LikesParams likesParams)
     {
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.FindFirst(ClaimTypes.Name)?.Value;
         var user = await _userRepository.GetUserByUsernameAsync(username);
         if(user == null) return NotFound("User not found");
 
