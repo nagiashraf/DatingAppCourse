@@ -1,6 +1,8 @@
 using API.Data;
 using API.Entities;
 using API.Extensions;
+using API.Helpers;
+using API.SignalR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.EntityFrameworkCore;
@@ -9,10 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 // Add services to the container.
-
+builder.Services.AddControllers(options => options.Filters.Add<LogUserActivityFilter>());
+builder.Services.AddCors();
 builder.Services.AddApplicationServices(config);
-
 builder.Services.AddIdentityServices(config);
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -65,11 +68,14 @@ app.UseHttpsRedirection();
 
 app.UseCors(policy => policy.WithOrigins("https://localhost:4200")
                             .AllowAnyMethod()
-                            .AllowAnyHeader());
+                            .AllowAnyHeader()
+                            .AllowCredentials());
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<PresenceHub>("hubs/presence");
+app.MapHub<MessageHub>("hubs/message");
 
 await app.RunAsync();

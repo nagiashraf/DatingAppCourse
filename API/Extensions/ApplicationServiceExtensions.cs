@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Microsoft.Extensions.Options;
+using API.SignalR;
 
 namespace API.Extensions;
 
@@ -14,16 +15,12 @@ public static class ApplicationServiceExtensions
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration config)
     {
-        services.AddControllers(options => options.Filters.Add<LogUserActivityFilter>());
-
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
         {
             c.ResolveConflictingActions(c => c.Last());
             c.OperationFilter<SwaggerDefaultValues>();
         });
-
-        services.AddCors();
 
         services.AddDbContextPool<DataContext>(options => options.UseSqlite(config.GetConnectionString("DefaultConnection")));
 
@@ -55,7 +52,10 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IPhotoService, PhotoService>();
 
         services.AddScoped<ILikeRepository, LikeRepository>();
+
         services.AddScoped<IMessageRepository, MessageRepository>();
+
+        services.AddSingleton<PresenceTracker>();
 
         return services;
     }

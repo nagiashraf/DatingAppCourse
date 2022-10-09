@@ -84,7 +84,7 @@ public class MessageRepository : IMessageRepository
         {
             foreach (var message in unreadMessages)
             {
-                message.DateRead = DateTime.Now;
+                message.DateRead = DateTime.UtcNow;
             }
 
             await _context.SaveChangesAsync();
@@ -92,5 +92,40 @@ public class MessageRepository : IMessageRepository
 
         return _mapper.Map<IEnumerable<MessageDto>>(messages);
 
+    }
+
+    public async Task AddGroup(Group group)
+    {
+        _context.Groups.Add(group);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<Connection> GetConnection(string connectionId)
+    {
+        return await _context.Connections.FindAsync(connectionId);
+    }
+    public async Task<Group> GetGroup(string groupName)
+    {
+        return await _context.Groups
+            .Include(g => g.Connections)
+            .FirstOrDefaultAsync(g => g.Name == groupName);
+    }
+    public async Task RemoveConnection(Connection connection)
+    {
+        _context.Connections.Remove(connection);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<Group> GetGroupForConnection(string connectionId)
+    {
+        return await _context.Groups
+            .Include(g => g.Connections)
+            .Where(g => g.Connections.Any(c => c.ConnectionId == connectionId))
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> SaveAllAsync()
+    {
+        return await _context.SaveChangesAsync() > 0;
     }
 }

@@ -27,5 +27,7 @@ public class AutoMapperProfiles : Profile
                 src.Sender.Photos.FirstOrDefault(ph => ph.IsMain).Url))
             .ForMember(dest => dest.RecipientPhotoUrl, opt => opt.MapFrom(src =>
                 src.Recipient.Photos.FirstOrDefault(ph => ph.IsMain).Url));
+
+        CreateMap<DateTime, DateTime>().ConstructUsing(d => DateTime.SpecifyKind(d, DateTimeKind.Utc));
     }
 }

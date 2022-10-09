@@ -25,6 +25,7 @@ import { PhotoEditorComponent } from './members/photo-editor/photo-editor.compon
 import { AdminPanelComponent } from './admin/admin-panel/admin-panel.component';
 import { HasRoleDirective } from './_directives/has-role.directive';
 import { UserManagementComponent } from './admin/user-management/user-management.component';
+import { MemberMessagesComponent } from './members/member-messages/member-messages.component';
 
 @NgModule({
   declarations: [
@@ -44,7 +45,8 @@ import { UserManagementComponent } from './admin/user-management/user-management
     PhotoEditorComponent,
     AdminPanelComponent,
     HasRoleDirective,
-    UserManagementComponent
+    UserManagementComponent,
+    MemberMessagesComponent
   ],
   imports: [
     BrowserModule,

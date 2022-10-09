@@ -20,6 +20,7 @@ public static class IdentityServiceExtensions
                 .AddJwtBearer(options => 
                 {
                     options.RequireHttpsMetadata = false;
+
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
@@ -30,6 +31,21 @@ public static class IdentityServiceExtensions
                         ValidAudiences = config.GetSection("Jwt:Audiences").Get<List<string>>(),
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Secret"])),
                         ClockSkew = TimeSpan.Zero
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/hubs")))
+                            {
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
                     };
                 });
 
