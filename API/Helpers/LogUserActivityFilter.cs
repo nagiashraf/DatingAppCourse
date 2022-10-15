@@ -1,16 +1,18 @@
 using System.Security.Claims;
 using API.Data;
+using API.Entities;
 using API.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace API.Helpers;
 
 public class LogUserActivityFilter : IAsyncActionFilter
 {
-    private readonly IUserRepository _userRepository;
-    public LogUserActivityFilter(IUserRepository userRepository)
+    private readonly UserManager<AppUser> _userManager;
+    public LogUserActivityFilter(UserManager<AppUser> userManager)
     {
-        _userRepository = userRepository;
+        _userManager = userManager;
     }
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
@@ -19,13 +21,13 @@ public class LogUserActivityFilter : IAsyncActionFilter
         if(!executedContext.HttpContext.User.Identity.IsAuthenticated) return;
 
         var username = executedContext.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var user = await _userRepository.GetUserByUsernameAsync(username);
+        var user = await _userManager.FindByNameAsync(username);
 
         if(user != null)
         {
-            user.LastActive = DateTime.Now;
+            user.LastActive = DateTime.UtcNow;
 
-            await _userRepository.UpdateAsync(user);
+            await _userManager.UpdateAsync(user);
         }
     }
 }

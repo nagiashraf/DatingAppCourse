@@ -18,7 +18,7 @@ public class MessageRepository : IMessageRepository
         _context = context;
     }
 
-    public async Task<Message> AddMessage(CreateMessageDto createMessageDto)
+    public Message AddMessage(CreateMessageDto createMessageDto)
     {
         var message = new Message()
         {
@@ -30,12 +30,11 @@ public class MessageRepository : IMessageRepository
         };
         
         _context.Messages.Add(message);
-        await _context.SaveChangesAsync();
 
         return message;
     }
 
-    public async Task DeleteMessage(Message message, string username)
+    public void DeleteMessage(Message message, string username)
     {
         if(message.SenderUsername == username) message.SenderDeleted = true;
 
@@ -44,7 +43,6 @@ public class MessageRepository : IMessageRepository
         if (message.SenderDeleted && message.RecipientDeleted)
         {
             _context.Messages.Remove(message);
-            await _context.SaveChangesAsync();
         }
     }
 
@@ -86,18 +84,13 @@ public class MessageRepository : IMessageRepository
             {
                 message.DateRead = DateTime.UtcNow;
             }
-
-            await _context.SaveChangesAsync();
         }
-
         return _mapper.Map<IEnumerable<MessageDto>>(messages);
-
     }
 
-    public async Task AddGroup(Group group)
+    public void AddGroup(Group group)
     {
         _context.Groups.Add(group);
-        await _context.SaveChangesAsync();
     }
 
     public async Task<Connection> GetConnection(string connectionId)
@@ -110,10 +103,9 @@ public class MessageRepository : IMessageRepository
             .Include(g => g.Connections)
             .FirstOrDefaultAsync(g => g.Name == groupName);
     }
-    public async Task RemoveConnection(Connection connection)
+    public void RemoveConnection(Connection connection)
     {
         _context.Connections.Remove(connection);
-        await _context.SaveChangesAsync();
     }
 
     public async Task<Group> GetGroupForConnection(string connectionId)
@@ -122,10 +114,5 @@ public class MessageRepository : IMessageRepository
             .Include(g => g.Connections)
             .Where(g => g.Connections.Any(c => c.ConnectionId == connectionId))
             .FirstOrDefaultAsync();
-    }
-
-    public async Task<bool> SaveAllAsync()
-    {
-        return await _context.SaveChangesAsync() > 0;
     }
 }

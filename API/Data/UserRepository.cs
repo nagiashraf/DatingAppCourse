@@ -23,7 +23,6 @@ public class UserRepository : IUserRepository
     {
         var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == id);
         _context.Users.Remove(user);
-        await _context.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<AppUser>> GetUsersAsync()
@@ -46,12 +45,10 @@ public class UserRepository : IUserRepository
         return user;
     }
     
-    public async Task UpdateAsync(AppUser user)
+    public void UpdateAsync(AppUser user)
     {
         var entityEntry = _context.Users.Attach(user);
         entityEntry.State = EntityState.Modified;
-
-        await _context.SaveChangesAsync();
     }
     
     public async Task<Photo> AddPhotoAsync(AppUser user, ImageUploadResult imageUploadResult)

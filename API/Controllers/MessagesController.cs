@@ -1,10 +1,12 @@
 using System.Security.Claims;
 using API.DTOs;
+using API.Entities;
 using API.Extensions;
 using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -15,21 +17,21 @@ namespace API.Controllers;
 [Authorize]
 public class MessagesController : ControllerBase
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IMessageRepository _messageRepository;
+    private readonly UserManager<AppUser> _userManager;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public MessagesController(IUserRepository userRepository, IMessageRepository messageRepository, IMapper mapper)
+    public MessagesController(UserManager<AppUser> userManager, IUnitOfWork unitOfWork, IMapper mapper)
     {
+        _userManager = userManager;
         _mapper = mapper;
-        _messageRepository = messageRepository;
-        _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
     }
 
     [HttpGet("{messageId:int}")]
     public async Task<ActionResult<MessageDto>> GetMessage(int messageId)
     {
-        var message = await _messageRepository.GetMessageAsync(messageId);
+        var message = await _unitOfWork.MessageRepository.GetMessageAsync(messageId);
 
         if (message is null) return NotFound();
 
@@ -44,16 +46,17 @@ public class MessagesController : ControllerBase
         if (senderUsername == createMessageDto.RecipientUsername.ToLower())
             return BadRequest("You cannot send messages to yourself");
 
-        var sender = await _userRepository.GetUserByUsernameAsync(senderUsername);
+        var sender = await _userManager.FindByNameAsync(senderUsername);
         if (sender is null) return NotFound("User not found");
 
-        var recipient = await _userRepository.GetUserByUsernameAsync(createMessageDto.RecipientUsername);
+        var recipient = await _userManager.FindByNameAsync(createMessageDto.RecipientUsername);
         if (recipient is null) return NotFound("User not found");
 
         createMessageDto.Sender = sender;
         createMessageDto.Recipient = recipient;
         
-        var message = await _messageRepository.AddMessage(createMessageDto);
+        var message = _unitOfWork.MessageRepository.AddMessage(createMessageDto);
+        await _unitOfWork.Complete();
 
         var messageDto = _mapper.Map<MessageDto>(message);
 
@@ -65,13 +68,14 @@ public class MessagesController : ControllerBase
     {
         var username = User.FindFirst(ClaimTypes.Name)?.Value;
 
-        var message = await _messageRepository.GetMessageAsync(id);
+        var message = await _unitOfWork.MessageRepository.GetMessageAsync(id);
 
         if (message is null) return NotFound("Message not found");
 
         if (message.SenderUsername != username || message.RecipientUsername != username) return Unauthorized();
 
-        await _messageRepository.DeleteMessage(message, username);
+        _unitOfWork.MessageRepository.DeleteMessage(message, username);
+        await _unitOfWork.Complete();
 
         return Ok();
     }
@@ -82,25 +86,10 @@ public class MessagesController : ControllerBase
         var username = User.FindFirst(ClaimTypes.Name)?.Value;
         messageParams.Username = username;
 
-        var messages = await _messageRepository.GetMessageForUserAsync(messageParams);
+        var messages = await _unitOfWork.MessageRepository.GetMessageForUserAsync(messageParams);
 
         Response.AddPaginationHeader(messages.PageIndex, messages.PageSize, messages.TotalUsersCount, messages.TotalPagesCount);
 
         return messages;
-    }
-
-    [HttpGet("thread/{recipientUsername}")]
-    public async Task<ActionResult<IEnumerable<MessageDto>>> GetMessageThread(string recipientUsername)
-    {
-        var currentUsername = User.FindFirst(ClaimTypes.Name)?.Value;
-        var user = await _userRepository.GetUserByUsernameAsync(currentUsername);
-        if (user is null) return NotFound("User not found");
-
-        var recipient = await _userRepository.GetUserByUsernameAsync(recipientUsername);
-        if (recipient is null) return NotFound("User not found");
-
-        var messages = await _messageRepository.GetMessageThreadAsync(currentUsername, recipientUsername);
-
-        return Ok(messages);
     }
 }

@@ -28,6 +28,8 @@ using (var scopedService = app.Services.CreateScope())
         var userManager = services.GetRequiredService<UserManager<AppUser>>();
         var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
 
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
         await context.Database.MigrateAsync();
         
         await Seed.SeedRolesAsync(roleManager);
@@ -73,6 +75,9 @@ app.UseCors(policy => policy.WithOrigins("https://localhost:4200")
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.MapControllers();
 app.MapHub<PresenceHub>("hubs/presence");

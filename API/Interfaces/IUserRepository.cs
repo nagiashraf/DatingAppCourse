@@ -7,7 +7,7 @@ namespace API.Interfaces;
 
 public interface IUserRepository
 {
-    Task UpdateAsync(AppUser user);
+    void UpdateAsync(AppUser user);
     Task<Photo> AddPhotoAsync(AppUser user, ImageUploadResult imageUploadResult);
     Task<Photo> SetMainPhotoAsync(AppUser user, int photoId);
     Task DeletePhotoAsync(AppUser user, Photo photo);

@@ -23,7 +23,7 @@ public static class IdentityServiceExtensions
 
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
-                        ValidateIssuer = true,
+                        ValidateIssuer = false,
                         ValidateAudience = false,
                         ValidateIssuerSigningKey = true,
                         ValidateLifetime = true,

@@ -17,23 +17,24 @@ namespace API.Controllers;
 [Authorize]
 public class UsersController : ControllerBase
 {
-    private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
     private readonly IPhotoService _photoService;
     private readonly UserManager<AppUser> _userManager;
-    public UsersController(UserManager<AppUser> userManager, IUserRepository userRepository, IMapper mapper, IPhotoService photoService)
+    private readonly IUnitOfWork _unitOfWork;
+
+    public UsersController(UserManager<AppUser> userManager, IUnitOfWork unitOfWork, IMapper mapper, IPhotoService photoService)
     {
         _photoService = photoService;
         _mapper = mapper;
-        _userRepository = userRepository;
         _userManager = userManager;
+        _unitOfWork = unitOfWork;
     }
     
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers([FromQuery] UserParams userParams)
     {
         var username = User.FindFirst(ClaimTypes.Name)?.Value;
-        var user = await _userRepository.GetUserByUsernameAsync(username);
+        var user = await _userManager.FindByNameAsync(username);
 
         userParams.CurrentUsername = username;
 
@@ -42,7 +43,7 @@ public class UsersController : ControllerBase
             userParams.Gender = user.Gender == "male" ? "female" : "male";
         }
 
-        var users = await _userRepository.GetMembersAsync(userParams);
+        var users = await _unitOfWork.UserRepository.GetMembersAsync(userParams);
 
         Response.AddPaginationHeader(users.PageIndex, users.PageSize, users.TotalUsersCount, users.TotalPagesCount);
 
@@ -52,7 +53,7 @@ public class UsersController : ControllerBase
     [HttpGet("{username}")]
     public async Task<ActionResult<MemberDto>> GetUser(string username)
     {
-        var user = await _userRepository.GetMemberByUsernameAsync(username);
+        var user = await _unitOfWork.UserRepository.GetMemberByUsernameAsync(username);
 
         if(user == null) return NotFound();
 
@@ -63,11 +64,12 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdateUser(MemberUpdateDto memberUpdateDto)
     {
         var username = User.FindFirst(ClaimTypes.Name)?.Value;
-        var user = await _userRepository.GetUserByUsernameAsync(username);
+        var user = await _unitOfWork.UserRepository.GetUserByUsernameAsync(username);
 
         if(user == null) return NotFound("User not found");
 
-        await _userRepository.UpdateAsync(_mapper.Map(memberUpdateDto, user));
+        _unitOfWork.UserRepository.UpdateAsync(_mapper.Map(memberUpdateDto, user));
+        await _unitOfWork.Complete();
 
         return NoContent();
     }
@@ -91,7 +93,7 @@ public class UsersController : ControllerBase
         if(file == null) return BadRequest("No photo uploaded");
 
         var username = User.FindFirst(ClaimTypes.Name)?.Value;
-        var user = await _userRepository.GetUserByUsernameAsync(username);
+        var user = await _userManager.FindByNameAsync(username);
 
         if(user == null) return NotFound("User not found");
 
@@ -99,7 +101,8 @@ public class UsersController : ControllerBase
 
         if(result.Error != null) return BadRequest(result.Error.Message);
 
-        var photo = await _userRepository.AddPhotoAsync(user, result);
+        var photo = await _unitOfWork.UserRepository.AddPhotoAsync(user, result);
+        await _unitOfWork.Complete();
 
         var photoDto = _mapper.Map<PhotoDto>(photo);
 
@@ -110,13 +113,14 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> SetMainPhoto(int photoId)
     {
         var username = User.FindFirst(ClaimTypes.Name)?.Value;
-        var user = await _userRepository.GetUserByUsernameAsync(username);
+        var user = await _userManager.FindByNameAsync(username);
         if(user == null) return NotFound("User not found");
 
         var currentMain = user.Photos.FirstOrDefault(ph => ph.IsMain);
         if(currentMain.Id == photoId) return BadRequest("This is already your main photo");
 
-        var result = await _userRepository.SetMainPhotoAsync(user, photoId);
+        var result = await _unitOfWork.UserRepository.SetMainPhotoAsync(user, photoId);
+        await _unitOfWork.Complete();
         if(result == null) return NotFound("Error setting the main photo");
 
         return NoContent();
@@ -126,7 +130,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> DeletePhoto(int photoId)
     {
         var username = User.FindFirst(ClaimTypes.Name)?.Value;
-        var user = await _userRepository.GetUserByUsernameAsync(username);
+        var user = await _userManager.FindByNameAsync(username);
         if(user == null) return NotFound("User not found");
 
         var photo = user.Photos.FirstOrDefault(ph => ph.Id == photoId);
@@ -139,7 +143,8 @@ public class UsersController : ControllerBase
             if(result.Error != null) return BadRequest(result.Error.Message);
         }
 
-        await _userRepository.DeletePhotoAsync(user, photo);
+        await _unitOfWork.UserRepository.DeletePhotoAsync(user, photo);
+        await _unitOfWork.Complete();
 
         return Ok();
     }

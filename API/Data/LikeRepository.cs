@@ -28,7 +28,6 @@ public class LikeRepository : ILikeRepository
         if(like != null)
         {
             _context.Likes.Remove(like);
-            await _context.SaveChangesAsync();
         }
     }
 
@@ -62,7 +61,7 @@ public class LikeRepository : ILikeRepository
         return await PagedList<LikeDto>.CreateAsync(usersToReturn, likesParams.PageIndex, likesParams.PageSize);
     }
 
-    public async Task AddLikeAsync(AppUser likeSourceUser, AppUser likedUser)
+    public void AddLike(AppUser likeSourceUser, AppUser likedUser)
     {
         var like = new UserLike
         {
@@ -71,7 +70,5 @@ public class LikeRepository : ILikeRepository
         };
         
         _context.Likes.Add(like);
-
-        await _context.SaveChangesAsync();
     }
 }
